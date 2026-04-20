@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de Guardias — IES Sierra Blanca</title>
+<style>
+:root{
+  --az:#1a3a6b;--az2:#2356a0;--az3:#3a7bd5;
+  --az-bg:#e8f0fb;--az-mid:#b8d0f5;--az-lite:#d4e5f9;
+  --bg:#f4f7fc;--borde:#cdd8ee;--txt:#1e2d45;--sec:#5a6e8a;--lite:#f0f4fa;
+  --ok:#1a7a3a;--ok-bg:#e6f4ec;--ok-bd:#8fcca8;
+  --err:#b02020;--err-bg:#fde8e8;--err-bd:#e8a0a0;
+  --warn:#b85a00;--warn-bg:#fef0e0;--warn-bd:#e8c080;
+  --r:10px;--sha:0 2px 14px rgba(26,58,107,.11);--sha2:0 6px 24px rgba(26,58,107,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);min-height:100vh;color:var(--txt);font-size:14px}
+header{background:linear-gradient(135deg,var(--az) 0%,var(--az2) 60%,var(--az3) 100%);color:#fff;box-shadow:0 4px 20px rgba(26,58,107,.28)}
+.hdr{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:14px 22px}
+.logo{background:#fff;border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.logo img{width:56px;height:56px;object-fit:contain}
+.logo-fb{font-size:19px;font-weight:900;color:var(--az)}
+.hdr-txt h1{font-size:19px;font-weight:700;line-height:1.2}
+.hdr-txt p{font-size:12px;opacity:.82;margin-top:2px}
+.hdr-r{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:3px 13px;font-size:11.5px;font-weight:600}
+.tabs{display:flex;gap:4px}
+.tab{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:5px 15px;font-size:12.5px;font-weight:600;cursor:pointer;color:#fff;transition:all .18s;font-family:inherit}
+.tab.on,.tab:hover{background:rgba(255,255,255,.26);border-color:rgba(255,255,255,.5)}
+main{max-width:1080px;margin:26px auto;padding:0 14px 80px}
+.banner{border-radius:var(--r);padding:11px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;display:none;border:1px solid}
+.b-ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd)}
+.b-err{background:var(--err-bg);color:var(--err);border-color:var(--err-bd)}
+.b-warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-bd)}
+.b-load{background:var(--az-bg);color:var(--az2);border-color:var(--az-mid)}
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sha);border:1px solid var(--borde);padding:20px 24px;margin-bottom:16px}
+.ct{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--az2);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.ct::before{content:'';width:3px;height:14px;background:var(--az3);border-radius:2px;flex-shrink:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+label{font-size:12.5px;font-weight:600;color:var(--sec);white-space:nowrap}
+select{height:37px;border:1.5px solid var(--borde);border-radius:8px;background:var(--lite);color:var(--txt);padding:0 11px;font-size:13.5px;cursor:pointer;font-family:inherit;transition:border-color .2s}
+select:focus{outline:none;border-color:var(--az3);box-shadow:0 0 0 3px rgba(58,123,213,.13)}
+input[type=text]{height:37px;border:1.5px solid var(--borde);border-radius:8px;background:#fff;color:var(--txt);padding:0 11px;font-size:13.5px;flex:1;min-width:180px;font-family:inherit;transition:border-color .2s}
+input[type=text]:focus{outline:none;border-color:var(--az3);box-shadow:0 0 0 3px rgba(58,123,213,.13)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .18s;font-family:inherit;padding:0 16px;height:37px}
+.btn-add{background:var(--az-bg);color:var(--az);border:1.5px solid var(--az-mid)}
+.btn-add:hover{background:var(--az-lite)}
+.btn-del{width:30px;height:30px;padding:0;background:var(--err-bg);color:var(--err);border:1.5px solid var(--err-bd);border-radius:7px;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.btn-del:hover{background:#f8d0d0}
+.btn-p{background:linear-gradient(135deg,var(--az) 0%,var(--az2) 100%);color:#fff;font-size:14px;padding:0 26px;height:42px;border-radius:10px;box-shadow:0 3px 10px rgba(26,58,107,.24)}
+.btn-p:hover{box-shadow:0 5px 16px rgba(26,58,107,.34);transform:translateY(-1px)}
+.btn-p:active{transform:translateY(0)}
+.btn-s{background:#fff;color:var(--az2);border:1.5px solid var(--az-mid)}
+.btn-s:hover{background:var(--az-bg)}
+.btn-ok{background:linear-gradient(135deg,var(--ok) 0%,#2e9e52 100%);color:#fff;font-size:14px;padding:0 24px;height:42px;border-radius:10px;box-shadow:0 3px 10px rgba(26,122,58,.22)}
+.btn-ok:hover{box-shadow:0 5px 16px rgba(26,122,58,.32);transform:translateY(-1px)}
+.btn-ok:active{transform:translateY(0)}
+.btn-sm{height:27px;padding:0 11px;font-size:12px;border-radius:6px}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:14px;margin-bottom:4px}
+.hgrid .card{margin-bottom:0}
+.ar{display:flex;gap:8px;align-items:center;margin-bottom:8px;animation:fi .2s ease}
+.ar-n{font-size:11px;font-weight:700;color:var(--az3);min-width:16px;text-align:right}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.rw{display:none;animation:fi .3s ease}
+.stit{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--az2);margin:20px 0 10px;display:flex;align-items:center;gap:7px}
+.stit::before{content:'';width:3px;height:14px;background:var(--az3);border-radius:2px;flex-shrink:0}
+.hb{background:#fff;border:1px solid var(--borde);border-radius:var(--r);margin-bottom:10px;overflow:visible;box-shadow:var(--sha)}
+.hb-hdr{background:linear-gradient(90deg,var(--az) 0%,var(--az2) 100%);color:#fff;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--r) var(--r) 0 0}
+.hb-hdr .hl{font-size:12.5px;font-weight:700;letter-spacing:.3px}
+.hb-hdr .hd{font-size:11.5px;opacity:.8}
+table.rt{width:100%;border-collapse:collapse;font-size:13.5px}
+table.rt thead th{background:var(--az-bg);color:var(--az2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:8px 13px;text-align:left;border-bottom:1px solid var(--az-lite)}
+table.rt tbody tr{border-bottom:1px solid #eef2f9}
+table.rt tbody tr:last-child{border-bottom:none}
+table.rt tbody tr:hover{background:var(--lite)}
+table.rt td{padding:10px 13px;vertical-align:middle}
+.ta{color:var(--az3);font-size:15px;text-align:center;width:30px}
+.bq{background:var(--az-bg);color:var(--az);border-radius:20px;padding:2px 11px;font-size:12px;font-weight:700}
+.bp{background:var(--ok-bg);color:var(--ok);border-radius:20px;padding:2px 11px;font-size:12px;font-weight:700}
+.be{background:var(--err-bg);color:var(--err);border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600}
+.dw{position:relative;display:inline-block}
+.sb{background:none;border:none;cursor:pointer;font-weight:600;color:var(--az);font-size:13.5px;font-family:inherit;padding:2px 7px;border-radius:6px;text-decoration:underline dotted var(--az3);text-underline-offset:3px;transition:background .15s}
+.sb:hover{background:var(--az-bg)}
+.dm{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1.5px solid var(--az-mid);border-radius:10px;box-shadow:var(--sha2);z-index:300;min-width:300px;max-height:260px;overflow-y:auto}
+.dm.open{display:block;animation:fi .15s ease}
+.di{padding:9px 13px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #f0f4f9}
+.di:last-child{border-bottom:none}
+.di:hover{background:var(--az-bg)}
+.di.cur{background:var(--az-bg);font-weight:700;color:var(--az)}
+.db{font-size:11px;color:var(--sec);background:var(--lite);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.cb{background:var(--lite);border:1px solid var(--borde);border-radius:8px;padding:14px 16px;font-family:'Courier New',monospace;font-size:13px;white-space:pre-wrap;line-height:1.9;color:var(--txt)}
+.cfp{background:linear-gradient(135deg,#e6f4ec 0%,#f0fbf4 100%);border:1.5px solid var(--ok-bd);border-radius:var(--r);padding:18px 22px;margin-top:16px;display:none;animation:fi .3s ease}
+.cf-t{font-size:14px;font-weight:700;color:var(--ok);margin-bottom:8px}
+.cf-d{font-size:12.5px;color:var(--sec);margin-bottom:14px;line-height:1.6}
+.cf-l{list-style:none;margin-bottom:14px;max-height:220px;overflow-y:auto}
+.cf-l li{font-size:13px;padding:6px 0;border-bottom:1px dashed var(--ok-bd);display:flex;justify-content:space-between;align-items:center}
+.cf-l li:last-child{border-bottom:none}
+.cf-b{display:flex;gap:10px;flex-wrap:wrap}
+.alerta{font-size:13px;color:var(--warn);margin-top:8px;min-height:16px}
+#pp{display:none}
+.sw{position:relative;margin-bottom:14px}
+.si{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+.sinp{width:100%;height:39px;border:1.5px solid var(--borde);border-radius:8px;padding:0 12px 0 38px;font-size:14px;background:#fff;font-family:inherit}
+.sinp:focus{outline:none;border-color:var(--az3);box-shadow:0 0 0 3px rgba(58,123,213,.12)}
+.pw{max-height:520px;overflow-y:auto;border:1px solid var(--borde);border-radius:8px}
+.pt{width:100%;border-collapse:collapse;font-size:13px}
+.pt th{background:var(--az-bg);color:var(--az2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 11px;text-align:left;border-bottom:1px solid var(--az-lite);position:sticky;top:0;z-index:1;cursor:pointer;user-select:none}
+.pt th:hover{background:var(--az-lite)}
+.pt td{padding:8px 11px;border-bottom:1px solid #eef2f9}
+.pt tr:last-child td{border-bottom:none}
+.pt tr:hover td{background:var(--lite)}
+.bar{width:70px;height:5px;background:#dde6f5;border-radius:3px;display:inline-block;vertical-align:middle}
+.baf{height:5px;border-radius:3px}
+.tag{display:inline-block;border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600}
+.ta-a{background:var(--err-bg);color:var(--err)}
+.ta-m{background:var(--warn-bg);color:var(--warn)}
+.ta-b{background:var(--ok-bg);color:var(--ok)}
+footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top:1px solid var(--az-lite);background:#fff}
+@media(max-width:640px){.hdr{flex-wrap:wrap}.hdr-r{margin-left:0}.hgrid{grid-template-columns:1fr}.card{padding:15px 13px}.btn-p,.btn-ok{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr">
+    <div class="logo">
+      <img src="https://static.wixstatic.com/media/165b96_8eadbc7987634b5584eacc7253c61b32~mv2.png/v1/fill/w_100,h_40,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/165b96_8eadbc7987634b5584eacc7253c61b32~mv2.png"
+           alt="Logo IES Sierra Blanca" onerror="this.parentElement.innerHTML='<span class=logo-fb>SB</span>'">
+    </div>
+    <div class="hdr-txt">
+      <h1>IES Sierra Blanca</h1>
+      <p>Marbella &middot; Gestor de Guardias del Profesorado</p>
+    </div>
+    <div class="hdr-r">
+      <div class="badge">Curso 2025&ndash;26</div>
+      <div class="tabs">
+        <button class="tab on" onclick="showP('g',this)">&#128203; Guardias</button>
+        <button class="tab" onclick="showP('p',this)">&#128101; Profesores</button>
+      </div>
+    </div>
+  </div>
+</header>
+<main>
+<div class="banner" id="bn"></div>
+<!-- PANEL GUARDIAS -->
+<div id="pg">
+  <div class="card">
+    <div class="ct">Selecci&oacute;n de d&iacute;a</div>
+    <div class="row">
+      <label>D&iacute;a:</label>
+      <select id="dia">
+        <option>LUNES</option><option>MARTES</option><option>MI&Eacute;RCOLES</option><option>JUEVES</option><option>VIERNES</option>
+      </select>
+      <button class="btn btn-p" style="margin-left:auto" onclick="calcDia()">&#9889; Calcular todo el d&iacute;a</button>
+    </div>
+    <div class="alerta" id="alt"></div>
+  </div>
+  <div class="hgrid" id="hg"></div>
+  <div class="rw" id="rw">
+    <div class="stit">Asignaci&oacute;n calculada &mdash; clic en el nombre para cambiar</div>
+    <div id="rb"></div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="ct" style="margin:0">Texto para copiar</div>
+        <button class="btn btn-s btn-sm" onclick="copiar(event)">&#128203; Copiar todo</button>
+      </div>
+      <div class="cb" id="cb"></div>
+    </div>
+    <div class="cfp" id="cfp">
+      <div class="cf-t">&#10003; Confirmar guardias realizadas</div>
+      <div class="cf-d">Al confirmar se escribe +1 en la columna D del Ranking para cada profesor asignado.<br>Revisa la lista antes de confirmar.</div>
+      <ul class="cf-l" id="cfl"></ul>
+      <div class="cf-b">
+        <button class="btn btn-ok" onclick="confirmar()">&#10003; Confirmar y guardar en Sheet</button>
+        <button class="btn btn-s" onclick="document.getElementById('cfp').style.display='none'">Cancelar</button>
+      </div>
+      <div class="banner" id="cbs" style="margin-top:10px"></div>
+    </div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn btn-ok" onclick="mostrarCfm()">&#10003; Confirmar horas de guardia y actualizar Sheet</button>
+    </div>
+  </div>
+</div>
+<!-- PANEL PROFESORES -->
+<div id="pp">
+  <div class="card">
+    <div class="ct">Ranking de profesores &mdash; menor % entra primero</div>
+    <div class="sw">
+      <span class="si">&#128269;</span>
+      <input class="sinp" type="text" id="buscar" placeholder="Buscar profesor..." oninput="renderP()">
+    </div>
+    <div class="pw">
+      <table class="pt">
+        <thead><tr>
+          <th onclick="sortP('n')">Nombre &#8597;</th>
+          <th style="width:65px;text-align:center" onclick="sortP('h')">H/sem &#8597;</th>
+          <th style="width:80px;text-align:center" onclick="sortP('g')">Guardias &#8597;</th>
+          <th style="width:80px;text-align:center" onclick="sortP('p')">% &#8597;</th>
+          <th style="width:110px;text-align:center">Carga</th>
+        </tr></thead>
+        <tbody id="ptb"></tbody>
+      </table>
+    </div>
+    <p style="font-size:12px;color:var(--sec);margin-top:10px">% = Guardias hechas / Horas guardia semanales. <strong>Menor % = entra primero.</strong> Los datos se cargan desde el Sheet al abrir.</p>
+  </div>
+</div>
+</main>
+<footer>IES Sierra Blanca &middot; Dr. Ma&iacute;z Vi&ntilde;als, 24 &middot; 29600 Marbella (M&aacute;laga) &middot; 952 828 384</footer>
+<script>
+/*
+=======================================================
+ CONFIGURACIÓN — Apps Script (una vez, 5 min)
+=======================================================
+Sheet Horario:  1OoeZAfOLAIpOcPynkbqzY1obqk39daCF
+Sheet Ranking:  1dPZeQHAwL1Ylz7ZwiHt32EfBjqlFptge
+
+PASO 1: Abre el Sheet de RANKING → Extensiones → Apps Script
+PASO 2: Pega este código completo:
+
+─────────────────────────────────────────────────────
+const SH_RANKING  = '1dPZeQHAwL1Ylz7ZwiHt32EfBjqlFptge';
+const SH_HORARIO  = '1OoeZAfOLAIpOcPynkbqzY1obqk39daCF';
+
+function doGet(e) {
+  var ssR = SpreadsheetApp.openById(SH_RANKING);
+  var hR  = ssR.getSheets()[0];
+  var dR  = hR.getRange('A2:E200').getValues();
+  var profs = [];
+  dR.forEach(function(row, i) {
+    if (!row[0]) return;
+    var pct = (typeof row[4] === 'number') ? row[4] : null;
+    profs.push({n:String(row[0]), h:Number(row[2])||0, g:Number(row[3])||0, p:pct, f:i+2});
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true, profs:profs}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var ssR  = SpreadsheetApp.openById(SH_RANKING);
+  var hR   = ssR.getSheets()[0];
+  data.updates.forEach(function(u) {
+    var fila = u.fila;
+    var nuevoG = u.nuevoG;
+    hR.getRange(fila, 4).setValue(nuevoG);  // col D = Guardias hechas
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+─────────────────────────────────────────────────────
+PASO 3: Implementar → Nueva implementación
+        Tipo: Aplicación web
+        Ejecutar como: Yo
+        Acceso: Cualquier usuario
+        → Copia la URL
+
+PASO 4: Pega la URL aquí:
+=======================================================
+*/
+const APPS_URL = 'TU_URL_APPS_SCRIPT_AQUI';
+
+/* ── DATOS RANKING (fallback del Sheet) ──────────────── */
+let PROFS = [{"n": "Aceituno Sevilla, Fátima", "h": 2, "g": 14, "p": 7.0, "f": 2}, {"n": "Aguilar Gil, Manuel", "h": 4, "g": 28, "p": 7.0, "f": 3}, {"n": "Aguilera Portillo, Rafael/ Puche, Sara", "h": 2, "g": 14, "p": 7.0, "f": 4}, {"n": "Álvarez Caballero, José Manuel", "h": 2, "g": 15, "p": 7.5, "f": 5}, {"n": "Antolín Jubete, Ana Isabel", "h": 3, "g": 19, "p": 6.3, "f": 6}, {"n": "Arenas, Marina / Marquez, Carmen", "h": 5, "g": 36, "p": 7.2, "f": 8}, {"n": "Bellido Lorente, María", "h": 2, "g": 14, "p": 7.0, "f": 9}, {"n": "Benítez Hurtado, Ana", "h": 4, "g": 26, "p": 6.5, "f": 10}, {"n": "Besteiro Vallejo, Juan", "h": 4, "g": 28, "p": 7.0, "f": 11}, {"n": "Campos González, Rosario Beatriz", "h": 4, "g": 28, "p": 7.0, "f": 12}, {"n": "Campos Reina, José Luis", "h": 2, "g": 14, "p": 7.0, "f": 13}, {"n": "Cano Furniet, Mº Dolores", "h": 4, "g": 28, "p": 7.0, "f": 14}, {"n": "Cantos García, Juan Miguel", "h": 3, "g": 22, "p": 7.3, "f": 15}, {"n": "Caparrós Águila, Carmen", "h": 2, "g": 14, "p": 7.0, "f": 16}, {"n": "Carmona Farfán, Julia", "h": 3, "g": 21, "p": 7.0, "f": 17}, {"n": "Centeno Sanchiz, Ana Vanesa", "h": 4, "g": 28, "p": 7.0, "f": 18}, {"n": "Chaves Jáuregui, Rubén", "h": 2, "g": 14, "p": 7.0, "f": 19}, {"n": "Chiroux Jiménez, Marina", "h": 2, "g": 14, "p": 7.0, "f": 20}, {"n": "Cobo Romero, Raúl Jesús", "h": 2, "g": 14, "p": 7.0, "f": 21}, {"n": "Conde Santos, José Manuel", "h": 5, "g": 34, "p": 6.8, "f": 22}, {"n": "Cózar Pelayo, Pedro Jesús", "h": 1, "g": 7, "p": 7.0, "f": 23}, {"n": "Díaz Cabello, Isabel", "h": 4, "g": 29, "p": 7.3, "f": 25}, {"n": "Díaz Ramiro, Francisco", "h": 1, "g": 7, "p": 7.0, "f": 26}, {"n": "Domínguez López, Gonzalo", "h": 3, "g": 20, "p": 6.7, "f": 27}, {"n": "Fernandez Salcedo, Elena", "h": 4, "g": 29, "p": 7.3, "f": 28}, {"n": "Gálvez Fernandez, Ismael", "h": 1, "g": 6, "p": 6.0, "f": 29}, {"n": "Gámez Quintana, Juana", "h": 4, "g": 27, "p": 6.8, "f": 30}, {"n": "García López, Trinidad Isabel", "h": 5, "g": 36, "p": 7.2, "f": 31}, {"n": "Gómez Molero, Miguel Ángel", "h": 3, "g": 22, "p": 7.3, "f": 33}, {"n": "González López, Azahara", "h": 3, "g": 23, "p": 7.7, "f": 34}, {"n": "Gutiérrez del Moral, Gregorio", "h": 5, "g": 34, "p": 6.8, "f": 35}, {"n": "Guzmán Gutiérrez, Juan/ Moreno, Natalia", "h": 2, "g": 14, "p": 7.0, "f": 36}, {"n": "Guzmán Serrano, Alejandro", "h": 2, "g": 15, "p": 7.5, "f": 37}, {"n": "Herrera Asensio, Pablo", "h": 2, "g": 16, "p": 8.0, "f": 38}, {"n": "Iglesias, Arancha / Noemi Calvente", "h": 3, "g": 21, "p": 7.0, "f": 39}, {"n": "Jiménez García, José Antonio", "h": 4, "g": 28, "p": 7.0, "f": 40}, {"n": "Jiménez Peláez, Pilar", "h": 4, "g": 29, "p": 7.3, "f": 41}, {"n": "Laura Martín, Ana", "h": 4, "g": 27, "p": 6.8, "f": 42}, {"n": "López Blanco, David", "h": 4, "g": 29, "p": 7.3, "f": 44}, {"n": "López Blázquez, Guillermo", "h": 3, "g": 22, "p": 7.3, "f": 45}, {"n": "Mairena Fernandez, Inmaculada", "h": 1, "g": 6, "p": 6.0, "f": 46}, {"n": "Martín Carmona, Daniel", "h": 3, "g": 21, "p": 7.0, "f": 47}, {"n": "Martín Olmos, María del Carmen / Laura López", "h": 5, "g": 35, "p": 7.0, "f": 48}, {"n": "Martín Pérez, Carmela", "h": 3, "g": 22, "p": 7.3, "f": 49}, {"n": "Mellado Rodríguez, Manuel", "h": 4, "g": 27, "p": 6.8, "f": 50}, {"n": "Millán Sánchez, José Antonio", "h": 3, "g": 21, "p": 7.0, "f": 51}, {"n": "Mirasol García, Mercedes", "h": 4, "g": 28, "p": 7.0, "f": 52}, {"n": "Mirassou Arguello, Emilio", "h": 4, "g": 28, "p": 7.0, "f": 53}, {"n": "Molina Moreno, Ana Gema", "h": 2, "g": 15, "p": 7.5, "f": 54}, {"n": "Montero González, Juan José / Sara FyQ", "h": 4, "g": 28, "p": 7.0, "f": 55}, {"n": "Montesinos Bonilla, Sofía", "h": 3, "g": 20, "p": 6.7, "f": 56}, {"n": "Montoro Caracuel, María del Mar", "h": 2, "g": 16, "p": 8.0, "f": 57}, {"n": "Morales Aguilar, Inés", "h": 4, "g": 28, "p": 7.0, "f": 58}, {"n": "Morales Hoces, Natalia", "h": 2, "g": 15, "p": 7.5, "f": 59}, {"n": "Morales Maestre, Fernando", "h": 5, "g": 35, "p": 7.0, "f": 60}, {"n": "Morales Márquez, Pedro", "h": 4, "g": 29, "p": 7.3, "f": 61}, {"n": "Morales Morales, Sofía", "h": 2, "g": 10, "p": 5.0, "f": 62}, {"n": "Moreno Cañizares, Ana", "h": 5, "g": 36, "p": 7.2, "f": 63}, {"n": "Moreno Liranzo, Pedro Borja", "h": 4, "g": 28, "p": 7.0, "f": 65}, {"n": "Navarro González, José María", "h": 1, "g": 7, "p": 7.0, "f": 66}, {"n": "Navidad Maeso, David", "h": 4, "g": 28, "p": 7.0, "f": 67}, {"n": "Nieto Raya, Luis Eduardo / Patricia Sierra", "h": 6, "g": 43, "p": 7.2, "f": 68}, {"n": "Orantes Villanueva, Cristina", "h": 3, "g": 21, "p": 7.0, "f": 69}, {"n": "Ortiz Ortiz, María Asunción", "h": 1, "g": 5, "p": 5.0, "f": 70}, {"n": "Pedrote Larre, Luis", "h": 1, "g": 7, "p": 7.0, "f": 71}, {"n": "Pérez Morales, Patricia", "h": 2, "g": 13, "p": 6.5, "f": 72}, {"n": "Ponce Hevilla, Antonio Jesús", "h": 2, "g": 15, "p": 7.5, "f": 74}, {"n": "Portillo Caurcel, Pablo", "h": 1, "g": 7, "p": 7.0, "f": 75}, {"n": "Puentes Rojas, Pedro José", "h": 4, "g": 30, "p": 7.5, "f": 76}, {"n": "Quesada Macía, Francisco Manuel", "h": 3, "g": 22, "p": 7.3, "f": 77}, {"n": "Ramírez, Inmaculada", "h": 4, "g": 12, "p": 3.0, "f": 78}, {"n": "Rayo Serrano, Serafina Rocío", "h": 2, "g": 15, "p": 7.5, "f": 79}, {"n": "Restoy Maqueda, F. Silvia", "h": 3, "g": 21, "p": 7.0, "f": 80}, {"n": "Rodríguez Briales, Paula", "h": 4, "g": 29, "p": 7.3, "f": 81}, {"n": "Rodríguez Magro, Antonio", "h": 1, "g": 7, "p": 7.0, "f": 82}, {"n": "Rodríguez, Ana Belén", "h": 4, "g": 27, "p": 6.8, "f": 83}, {"n": "Rodríguez Ruiz, María", "h": 1, "g": 7, "p": 7.0, "f": 84}, {"n": "Sabater Espolet, Rosalía", "h": 2, "g": 12, "p": 6.0, "f": 85}, {"n": "Santiago Gutiérrez, María José", "h": 3, "g": 22, "p": 7.3, "f": 86}, {"n": "Simón Fernandez, Simón", "h": 4, "g": 29, "p": 7.3, "f": 87}, {"n": "Tejeda García, Patricia", "h": 2, "g": 15, "p": 7.5, "f": 89}, {"n": "Varas Velasco, Marina", "h": 3, "g": 22, "p": 7.3, "f": 90}, {"n": "Zayas Millán, María Isabel", "h": 2, "g": 14, "p": 7.0, "f": 91}];
+
+/* ── HORARIO (extraído del Sheet de horario) ───────────── */
+const HORARIO = {"1": {"LUNES": ["MORENO ANA ZTS", "Navidad Maeso, David Mat4", "Gómez Molero, M. Ángel REL1", "Gamez Juana Ori2", "Varas Velasco, Marina ING6", "Cano María Dolores ZTS", "López Guillermo EF"], "MARTES": ["BENÍTEZ ANA GEH1", "LAURA MARTIN ANA GEH2", "MELLADO RODRIGUEZ MANU", "MILLAN JOSE ANTONIO GEH4", "Gamez Juana Ori2", "Cano María Dolores ZTS", "Ortiz Asun FOL", "MORENO ANA ZTS", "Ramírez, Inmaculada FyQ"], "MIÉRCOLES": ["DOMÍNGUEZ LÓPEZ GONZAL", "AGUILAR GIL MANUEL GEH6", "MARTIN PEREZ CARMELA ING", "QUESADA MACIA FRANCISCO", "Arenas, Marina / Marquez, Carmen", "Portillo Pablo FyQ", "Cano María Dolores ZTS", "MORENO ANA ZTS", "Galvez Ismael EF"], "JUEVES": ["BENÍTEZ ANA GEH1", "DOMÍNGUEZ LÓPEZ GONZAL", "MARTIN PEREZ CARMELA ING", "JIMENEZ GARCIA JOSE ANTO", "Molina Moreno, Ana Gema SE", "Campos González, R. Beatriz", "Besteiro Juan Ori1", "Ramírez, Inmaculada FyQ"], "VIERNES": ["DIAZ CABELLO ISABEL LEN2", "ORANTES CRISTINA MAT1", "NIETO RAYA EDUARDO EF4 / Patricia", "MORALES MAESTRE FERNAND", "Besteiro Juan Ori1", "Cano María Dolores ZTS", "Patricia Ing", "De la Torre Rubio, Laura INF"]}, "2": {"LUNES": ["Gutiérrez del Moral, Gregorio", "MORALES AGUILAR INES MAT", "LOPEZ BLANCO DAVID EF2", "CONDE JOSE MANUEL TEC2", "BELLIDO LORENTE MARIA MA", "Rayo Serrano, S. Rocío DIB2", "MORENO PEDRO BORJA FOL4", "Campos González, R. Beatriz", "CHAVES RUBÉN SER7", "López Guillermo EF"], "MARTES": ["Iglesias, Arancha / Noemi Calvente", "MARTIN CARMONA DANIEL EF", "MELLADO RODRIGUEZ MANU", "MORALES MAESTRE FERNAND", "RESTOY SILVIA ALE2", "MORENO PEDRO BORJA FOL4", "CANTOS GARCÍA JUAN MIGU", "Aguilera Portillo Rafael SER5/Sara Puche", "PONCE ANTONIO JESÚS EF1", "Ramírez, Inmaculada FyQ"], "MIÉRCOLES": ["GONZALEZ AZAHARA LEN1", "Gutiérrez del Moral, Gregorio", "MONTERO JUAN JOSE / Sara Nef", "MILLAN JOSE ANTONIO GEH4", "LOPEZ BLANCO DAVID EF2", "CHIROUX MARINA FR2", "MIRASSOU ARGUELLO EMILI", "Varas Velasco, Marina ING6", "Arenas, Marina / Marquez, Carmen", "María Rodríguez ING"], "JUEVES": ["GONZALEZ AZAHARA LEN1", "DOMÍNGUEZ LÓPEZ GONZAL", "DIAZ CABELLO ISABEL LEN2", "CARMONA FARFÁN JULIA DIB", "Campos Reina, José Luis MAT", "JIMENEZ GARCIA JOSE ANTO", "ACEITUNO SEVILLA FÁTIMA I", "JIMÉNEZ PELÁEZ PILAR MAT6", "Molina Moreno, Ana Gema SE", "Sara Puche"], "VIERNES": ["MORALES AGUILAR INES MAT", "CONDE JOSE MANUEL TEC2", "Gómez Molero, M. Ángel REL1", "NIETO RAYA EDUARDO EF4 / Patricia", "RODRIGUEZ BIALES PAULA B", "Díaz Ramiro, Francisco COC1", "Marisa Zayas Ing", "De la Torre Rubio, Laura INF"]}, "3": {"LUNES": ["GUZMAN ALEJANDRO INFO1", "Gutiérrez del Moral, Gregorio", "AGUILAR GIL MANUEL GEH6", "CAPARROS CARMEN ING1", "SANTIAGO MARIA JOSE LEN5", "HERRERA ASENCIO PABLO GE", "Campos Reina, José Luis MAT", "RODRIGUEZ BIALES PAULA B", "MIRASOL GARCÍA MERCEDES", "NAVIDAD, DAVID"], "MARTES": ["ORANTES CRISTINA MAT1", "LOPEZ BLANCO DAVID EF2", "CARMONA FARFÁN JULIA DIB", "CONDE JOSE MANUEL TEC2", "Navidad Maeso, David Mat4", "SIMON SIMON FERNANDEZ B", "Martín Carmen Tur/ Laura", "CENTENO ANA VANESA TUR1", "CANTOS GARCÍA JUAN MIGU"], "MIÉRCOLES": ["DIAZ CABELLO ISABEL LEN2", "De la Torre Rubio, Laura INFO", "MELLADO RODRIGUEZ MANU", "MIRASSOU ARGUELLO EMILI", "MORALES MAESTRE FERNAND", "Zayas Millán, Mª. Isabel ING7", "García López, Trinidad Isabel", "MORENO PEDRO BORJA FOL4", "Martín Carmen Tur / Laura", "GUZMAN GUTIERREZ JUAN C", "CENTENO ANA VANESA TUR1"], "JUEVES": ["MILLAN JOSE ANTONIO GEH4", "AGUILAR GIL MANUEL GEH6", "ORANTES CRISTINA MAT1", "CONDE JOSE MANUEL TEC2", "QUESADA MACIA FRANCISCO", "Arenas, Marina / Marquez, Carmen", "MIRASOL GARCÍA MERCEDES", "Aguilera Portillo Rafael SER5/Sara Puche", "Antolín Jubete Ana SER1"], "VIERNES": ["BENÍTEZ ANA GEH1", "MARTIN PEREZ CARMELA ING", "Montoro Caracuel, Mª Mar MU", "NIETO RAYA EDUARDO EF4 / Patricia", "MORALES HOCES NATALIA EC", "COBO ROMERO RAUL LEN6", "Sabater Espolet, Rosalía COC", "María Rodríguez Ing"]}, "R": {"LUNES": ["MARTIN PEREZ CARMELA ING", "SANTIAGO MARIA JOSE LEN5", "MORALES HOCES NATALIA EC", "COBO ROMERO RAUL LEN6", "CAPARRÓS CARMEN", "Pedrote Luis HIS", "PONCE ANTONIO JESÚS EF1", "Pérez Patricia Ing"], "MARTES": ["ACEITUNO SEVILLA FÁTIMA I", "DOMÍNGUEZ LÓPEZ GONZAL", "MORALES HOCES NATALIA EC", "COBO ROMERO RAUL LEN6", "MORENO PEDRO BORJA FOL4", "Galvez Ismael EF", "Cano María Dolores ZTS", "María Rodríguez Ing", "López Guillermo EF"], "MIÉRCOLES": ["LAURA MARTIN ANA GEH2", "RODRIGUEZ ANA BELÉN LEN", "MARTIN CARMONA DANIEL EF", "MOTESINOS BONILLA SOFIA", "DOMÍNGUEZ LÓPEZ GONZAL", "Mairena Inma FRA", "Pérez Patricia Ing"], "JUEVES": ["GONZALEZ AZAHARA LEN1", "RODRIGUEZ ANA BELÉN LEN", "LOPEZ BLANCO DAVID EF2", "ORANTES CRISTINA MAT1", "QUESADA MACIA FRANCISCO", "MONTERO JUAN JOSE / Sara Nef", "Besteiro Juan Ori1", "Portillo Pablo FyQ / Inmaculada Ramírez", "Evangélica Miriam"], "VIERNES": ["GONZALEZ AZAHARA LEN1", "PONCE ANTONIO JESÚS EF1", "ÁLVAREZ CABALLERO JOSE M", "SIMON SIMON FERNANDEZ B", "DIAZ CABELLO ISABEL LEN2", "Gamez Juana Ori2", "Ortiz Asun FOL", "GUZMAN ALEJANDRO INFO1"]}, "4": {"LUNES": ["Iglesias, Arancha / Noemi Calvente", "MONTERO JUAN JOSE / Sara Nef", "LOPEZ BLANCO DAVID EF2", "Gómez Molero, M. Ángel REL1", "NIETO RAYA EDUARDO EF4 / Patricia", "MORALES MAESTRE FERNAND", "COBO ROMERO RAUL LEN6", "Martín Carmen tur / Laura", "CENTENO ANA VANESA TUR1", "María Rodríguez ING"], "MARTES": ["BENÍTEZ ANA GEH1", "RODRIGUEZ ANA BELÉN LEN", "MONTERO JUAN JOSE", "ÁLVAREZ CABALLERO JOSE M", "CARMONA FARFÁN JULIA DIB", "ACEITUNO SEVILLA FÁTIMA I / Besteiro", "QUESADA MACIA FRANCISCO", "Martín Carmen tur / Laura", "López Guillermo EF"], "MIÉRCOLES": ["Gutiérrez del Moral, Gregorio", "DIAZ CABELLO ISABEL LEN2", "MORALES AGUILAR INES MAT", "SANTIAGO MARIA JOSE LEN5", "JIMÉNEZ PELÁEZ PILAR MAT6", "MOTESINOS BONILLA SOFIA", "Rayo Serrano, S. Rocío DIB2", "MORENO PEDRO BORJA FOL4", "Morales Márquez, Pedro COC5", "María Rodríguez ING"], "JUEVES": ["De la Torre Rubio, Laura INF", "HERRERA ASENCIO PABLO G", "JIMÉNEZ PELÁEZ PILAR MAT6", "MOTESINOS BONILLA SOFIA", "García López, Trinidad Isabel", "Antolín Jubete Ana SER1", "Campos González, R. Beatriz", "CANTOS GARCÍA JUAN MIGU", "Arenas, Marina / Marquez, Carmen"], "VIERNES": ["RESTOY SILVIA ALE2", "Montoro Caracuel, Mª Mar MU", "Aceituno, Fátima", "JIMÉNEZ PELÁEZ PILAR MAT6", "Rodríguez Magro, Antonio SE", "Sabater Espolet, Rosalía COC", "Cózar Pelayo, Pedro Jesús CO", "Morales Márquez, Pedro COC5", "Ramírez, Inmaculada FyQ"]}, "5": {"LUNES": ["LAURA MARTIN ANA GEH2", "Gutiérrez del Moral, Gregorio", "Navidad Maeso, David Mat4", "CAPARROS CARMEN ING1", "MARTIN CARMONA DANIEL EF", "CONDE JOSE MANUEL TEC2", "Campos González, R. Beatriz", "GUZMAN GUTIERREZ JUAN C", "MIRASOL GARCÍA MERCEDES"], "MARTES": ["LAURA MARTIN ANA GEH2", "MONTERO JUAN JOSE / Sara Nef", "Navarro González, J. María FI", "AGUILAR GIL MANUEL GEH6", "Martín Carmen tur / Laura", "RODRIGUEZ BIALES PAULA B", "García López, Trinidad Isabel", "CENTENO ANA VANESA TUR1"], "MIÉRCOLES": ["SANTIAGO MARIA JOSE LEN5", "MORALES HOCES NATALIA EC", "García López, Trinidad Isabel", "Morales Márquez, Pedro COC5", "De la Torre Rubio, Laura INFO", "Besteiro Juan Ori1"], "JUEVES": ["MORALES AGUILAR INES MAT", "MIRASSOU ARGUELLO EMILI", "Varas Velasco, Marina ING6", "MOTESINOS BONILLA SOFIA", "García López, Trinidad Isabel", "TEJEDA GARCÍA PATRICIA GE", "Arenas, Marina / Marquez, Carmen", "María Rodríguez ING"], "VIERNES": ["RODRIGUEZ ANA BELÉN LEN", "MELLADO RODRIGUEZ MANU", "SIMON SIMON FERNANDEZ B", "MIRASOL GARCÍA MERCEDES", "CHAVES RUBÉN SER7", "Puentes Pedro Mat"]}, "6": {"LUNES": ["GUZMAN ALEJANDRO INFO1", "PONCE ANTONIO JESÚS EF1", "CHIROUX MARINA FR2", "JIMENEZ GARCIA JOSE ANTO", "MIRASSOU ARGUELLO EMILI", "FERNANDEZ ELENA PT", "MORENO ANA ZTS", "Puentes Pedro Mat"], "MARTES": ["Morales Sofía ALE", "NIETO RAYA EDUARDO EF4 / Patricia", "RESTOY SILVIA ALE2", "FERNANDEZ ELENA PT", "MORENO ANA ZTS", "Pedrote Luis HIS", "MARTIN CARMONA DANIEL E"], "MIÉRCOLES": ["JIMENEZ GARCIA JOSE ANTO", "SIMON SIMON FERNANDEZ B", "RODRIGUEZ BIALES PAULA B", "Antolín Jubete Ana SER1", "LAURA MARTIN ANA GEH2", "Gamez Juana Ori2", "FERNANDEZ ELENA PT", "GONZALEZ AZAHARA LEN1"], "JUEVES": ["MORALES MAESTRE FERNAN", "SIMON SIMON FERNANDEZ B", "Morales Márquez, Pedro COC", "Gamez Juana Ori2", "MORENO ANA ZTS", "Mairena Inma FRA", "Puentes Pedro Mat"], "VIERNES": ["ÁLVAREZ CABALLERO JOSE M", "BELLIDO LORENTE MARIA MA", "TEJEDA GARCÍA PATRICIA GE", "FERNANDEZ ELENA PT", "Morales Sofía ALE", "Patricia Ing", "Iglesias, Arancha / Noemi Calvente", "Puentes Pedro Mat"]}};
+
+const HORAS=['1','2','3','R','4','5','6'];
+const HL={'1':'1ª hora','2':'2ª hora','3':'3ª hora','R':'Recreo','4':'4ª hora','5':'5ª hora','6':'6ª hora'};
+
+let ausH={}, asig={}, openDD=null, sortC='p', sortA=true;
+
+/* ── UTILIDADES ── */
+function nk(s){
+  if(!s) return '';
+  return s.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9 \/]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+/* Busca el profesor en PROFS que mejor coincida con un nombre del horario */
+function matchProf(nombreHorario){
+  const k = nk(nombreHorario);
+  // Intentar coincidencia exacta primero
+  let found = PROFS.find(p => nk(p.n) === k);
+  if(found) return found;
+  // Palabras clave: cogemos las primeras 2 palabras del apellido
+  const words = k.split(' ').filter(w => w.length > 2);
+  if(!words.length) return null;
+  let best = null, bestScore = 0;
+  PROFS.forEach(p => {
+    const pk = nk(p.n);
+    let score = 0;
+    words.forEach(w => { if(pk.includes(w)) score++; });
+    if(score > bestScore){ bestScore = score; best = p; }
+  });
+  return bestScore >= 2 ? best : null;
+}
+
+function getPct(p){ return p && p.p !== null ? p.p : 9999; }
+
+function bn(msg, type, id){
+  const el=document.getElementById(id||'bn');
+  el.className='banner b-'+type; el.innerHTML=msg; el.style.display='block';
+}
+function hbn(id){ const el=document.getElementById(id||'bn'); if(el) el.style.display='none'; }
+
+/* ── CARGAR DATOS DEL SHEET ── */
+async function cargar(){
+  if(APPS_URL==='TU_URL_APPS_SCRIPT_AQUI') return;
+  bn('⏳ Cargando datos del Ranking desde Google Sheet...','load');
+  try{
+    const r = await fetch(APPS_URL + '?t='+Date.now());
+    const d = await r.json();
+    if(d.ok && d.profs && d.profs.length){
+      PROFS = d.profs;
+      bn('✅ Datos cargados: '+PROFS.length+' profesores.','ok');
+      setTimeout(()=>hbn(),3000);
+    }
+  }catch(e){
+    bn('⚠ Sin conexión al Sheet. Usando datos en memoria. ('+e.message+')','warn');
+  }
+}
+
+/* ── INIT ── */
+function init(){
+  const g=document.getElementById('hg');
+  g.innerHTML='';
+  HORAS.forEach(h=>{
+    ausH[h]=[''];
+    const d=document.createElement('div');
+    d.className='card'; d.id='hc-'+h; d.style.marginBottom='0';
+    d.innerHTML='<div class="ct">'+HL[h]+'</div><div id="al-'+h+'"></div>'+
+      '<button class="btn btn-add btn-sm" style="margin-top:2px" onclick="addA(''+h+'')">+ A&ntilde;adir ausente</button>';
+    g.appendChild(d);
+    renderA(h);
+  });
+}
+
+function addA(h){ ausH[h].push(''); renderA(h); }
+function delA(h,i){ ausH[h].splice(i,1); if(!ausH[h].length) ausH[h]=['']; renderA(h); }
+function renderA(h){
+  const l=document.getElementById('al-'+h);
+  l.innerHTML='';
+  ausH[h].forEach((a,i)=>{
+    const r=document.createElement('div'); r.className='ar';
+    r.innerHTML='<span class="ar-n">'+(i+1)+'</span>'+
+      '<input type="text" placeholder="Ej: Manuel (4A - GeH2)" value="'+a+'" oninput="ausH[''+h+'']['+i+']=this.value">'+
+      '<button class="btn-del" onclick="delA(''+h+'','+i+')">&#x2715;</button>';
+    l.appendChild(r);
+  });
+}
+
+/* ── CALCULAR DÍA ── */
+function calcDia(){
+  const dia=document.getElementById('dia').value;
+  document.getElementById('alt').textContent='';
+  asig={};
+  if(!HORAS.some(h=>ausH[h].some(t=>t.trim()))){
+    document.getElementById('alt').textContent='Introduce al menos un profesor ausente en alguna hora.';
+    return;
+  }
+  HORAS.forEach(h=>{
+    const txts=(ausH[h]||[]).map(t=>t.trim()).filter(Boolean);
+    if(!txts.length){ asig[h]=[]; return; }
+    const disp=[...(HORARIO[h]?.[dia]||[])];
+    const used=new Set();
+    asig[h]=txts.map(ausente=>{
+      const cands=disp.filter(p=>!used.has(nk(p)));
+      if(!cands.length) return {sust:null, ausente};
+      // Ordenar por % ascendente (menor % = más prioritario), empate aleatorio
+      cands.sort((a,b)=>{
+        const pa=matchProf(a), pb=matchProf(b);
+        const va=getPct(pa), vb=getPct(pb);
+        if(Math.abs(va-vb) > 0.001) return va-vb;
+        return Math.random()-0.5; // empate: aleatorio
+      });
+      used.add(nk(cands[0]));
+      return {sust:cands[0], ausente};
+    });
+  });
+  renderRes(dia);
+}
+
+/* ── RENDER RESULTADO ── */
+function renderRes(dia){
+  const rb=document.getElementById('rb');
+  rb.innerHTML='';
+  HORAS.forEach(h=>{
+    if(!asig[h]?.length) return;
+    const b=document.createElement('div'); b.className='hb'; b.id='bq-'+h;
+    b.innerHTML='<div class="hb-hdr"><span class="hl">'+HL[h]+'</span><span class="hd">'+dia+'</span></div>'+
+      '<table class="rt"><thead><tr>'+
+      '<th>Sustituto</th><th style="width:30px;text-align:center">&#8594;</th>'+
+      '<th>Ausente / Tarea</th><th style="width:80px;text-align:center">Guardias / %</th>'+
+      '</tr></thead><tbody id="tb-'+h+'"></tbody></table>';
+    rb.appendChild(b);
+    renderF(h,dia);
+  });
+  updCopy(dia);
+  document.getElementById('cfp').style.display='none';
+  const w=document.getElementById('rw');
+  w.style.display='block';
+  w.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderF(h,dia){
+  const tb=document.getElementById('tb-'+h);
+  if(!tb) return;
+  tb.innerHTML='';
+  asig[h].forEach((f,idx)=>{
+    const tr=document.createElement('tr');
+    if(f.sust){
+      const pf=matchProf(f.sust);
+      const gStr = pf ? pf.g+' <span style="color:var(--sec);font-size:11px">('+pf.p+'%)</span>' : '?';
+      tr.innerHTML='<td><div class="dw" id="dw-'+h+'-'+idx+'">'+
+        '<button class="sb" title="Clic para cambiar" onclick="tDD(''+h+'','+idx+',''+dia+'')">'+f.sust+'</button>'+
+        '<div class="dm" id="dd-'+h+'-'+idx+'"></div></div></td>'+
+        '<td class="ta">&#8594;</td>'+
+        '<td style="font-style:italic;color:var(--sec)">'+f.ausente+'</td>'+
+        '<td style="text-align:center"><span class="bp">'+gStr+'</span></td>';
+    }else{
+      tr.innerHTML='<td colspan="3"><span class="be">Sin guardia disponible</span>'+
+        '<span style="margin-left:8px;font-style:italic;color:var(--sec)">'+f.ausente+'</span></td><td></td>';
+    }
+    tb.appendChild(tr);
+  });
+}
+
+/* ── DROPDOWN CAMBIO ── */
+function tDD(h,idx,dia){
+  const id='dd-'+h+'-'+idx;
+  const dd=document.getElementById(id);
+  if(openDD&&openDD!==id){ const p=document.getElementById(openDD); if(p) p.classList.remove('open'); openDD=null; }
+  if(dd.classList.contains('open')){ dd.classList.remove('open'); openDD=null; return; }
+  const disp=HORARIO[h]?.[dia]||[];
+  const actual=asig[h][idx].sust;
+  const usados=new Set((asig[h]||[]).filter((_,i)=>i!==idx&&_.sust).map(f=>nk(f.sust)));
+  dd.innerHTML='';
+  // Ordenar por % ascendente para el dropdown
+  const sorted=[...disp].filter(n=>!usados.has(nk(n))).sort((a,b)=>{
+    const pa=matchProf(a), pb=matchProf(b);
+    const va=getPct(pa), vb=getPct(pb);
+    return va-vb;
+  });
+  sorted.forEach(nombre=>{
+    const pf=matchProf(nombre);
+    const item=document.createElement('div');
+    item.className='di'+(nk(nombre)===nk(actual)?' cur':'');
+    item.innerHTML='<span>'+nombre+'</span>'+
+      '<span class="db">'+(pf?pf.g+' guardias · '+pf.p+'%':'sin datos')+'</span>';
+    item.onclick=()=>cambiar(h,idx,nombre,dia);
+    dd.appendChild(item);
+  });
+  dd.classList.add('open'); openDD=id;
+}
+
+function cambiar(h,idx,nombre,dia){
+  asig[h][idx].sust=nombre;
+  const dd=document.getElementById('dd-'+h+'-'+idx);
+  if(dd) dd.classList.remove('open'); openDD=null;
+  renderF(h,dia); updCopy(dia);
+}
+
+document.addEventListener('click',e=>{
+  if(openDD&&!e.target.closest('.dw')){
+    const d=document.getElementById(openDD); if(d) d.classList.remove('open'); openDD=null;
+  }
+});
+
+/* ── TEXTO COPIABLE ── */
+function updCopy(dia){
+  let txt='';
+  HORAS.forEach(h=>{
+    if(!asig[h]?.length) return;
+    txt+=dia+' '+HL[h].toUpperCase()+':
+';
+    asig[h].forEach(f=>{ txt+= f.sust ? f.sust+' → '+f.ausente+'
+' : '(Sin guardia) → '+f.ausente+'
+'; });
+    txt+='
+';
+  });
+  document.getElementById('cb').textContent=txt.trim();
+}
+function copiar(e){
+  navigator.clipboard.writeText(document.getElementById('cb').textContent)
+    .then(()=>{ const b=e.target; b.textContent='✓ Copiado'; setTimeout(()=>b.textContent='📋 Copiar todo',2000); });
+}
+
+/* ── CONFIRMAR ── */
+function mostrarCfm(){
+  const list=[];
+  HORAS.forEach(h=>{
+    (asig[h]||[]).forEach(f=>{
+      if(f.sust){ const pf=matchProf(f.sust); list.push({nombre:f.sust,hora:HL[h],pf}); }
+    });
+  });
+  if(!list.length) return;
+  const ul=document.getElementById('cfl');
+  ul.innerHTML='';
+  list.forEach(a=>{
+    const li=document.createElement('li');
+    const gAct=a.pf?a.pf.g:0;
+    li.innerHTML='<span><strong>'+a.nombre+'</strong><span style="color:var(--sec);font-size:11px;margin-left:6px">('+a.hora+')</span></span>'+
+      '<span style="color:var(--az2);font-weight:700">'+gAct+' → '+(gAct+1)+'</span>';
+    ul.appendChild(li);
+  });
+  const p=document.getElementById('cfp');
+  p.style.display='block';
+  document.getElementById('cbs').style.display='none';
+  p.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function confirmar(){
+  const cbs=document.getElementById('cbs');
+  cbs.className='banner b-load'; cbs.textContent='⏳ Guardando en el Sheet...'; cbs.style.display='block';
+  const updates=[];
+  HORAS.forEach(h=>{
+    (asig[h]||[]).forEach(f=>{
+      if(!f.sust) return;
+      const pf=matchProf(f.sust);
+      if(!pf||!pf.f) return;
+      pf.g=(pf.g||0)+1;
+      // Recalcular % con horas semanales
+      pf.p = pf.h > 0 ? Math.round((pf.g/pf.h)*10)/10 : null;
+      updates.push({fila:pf.f, nuevoG:pf.g});
+    });
+  });
+  if(!updates.length){
+    cbs.className='banner b-warn'; cbs.textContent='⚠ No hay asignaciones con datos de fila para actualizar.'; return;
+  }
+  if(APPS_URL==='TU_URL_APPS_SCRIPT_AQUI'){
+    cbs.className='banner b-warn';
+    cbs.innerHTML='<strong>✅ Actualizado en memoria.</strong> Para guardar en el Sheet, configura el Apps Script.<br>'+
+      '<small>Filas: '+updates.map(u=>'fila '+u.fila+'→'+u.nuevoG).join(' · ')+'</small>';
+    renderP(); return;
+  }
+  try{
+    await fetch(APPS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({updates})});
+    cbs.className='banner b-ok';
+    cbs.textContent='✅ Sheet actualizado correctamente para '+updates.length+' profesor(es).';
+    renderP();
+  }catch(e){
+    cbs.className='banner b-err'; cbs.textContent='✗ Error: '+e.message;
+  }
+}
+
+/* ── PANEL PROFESORES ── */
+function sortP(c){ if(sortC===c) sortA=!sortA; else{sortC=c;sortA=true;} renderP(); }
+
+function renderP(){
+  const q=(document.getElementById('buscar')?.value||'').toLowerCase();
+  const tb=document.getElementById('ptb');
+  if(!tb) return;
+  const validos = PROFS.filter(p => p.h > 0 && p.p !== null && !isNaN(p.p));
+  const invalidos = PROFS.filter(p => !(p.h > 0 && p.p !== null && !isNaN(p.p)));
+  let lista=[...validos,...invalidos].filter(p=>p.n.toLowerCase().includes(q));
+  lista.sort((a,b)=>{
+    let va=a[sortC], vb=b[sortC];
+    if(va===null||va===undefined) va=9999;
+    if(vb===null||vb===undefined) vb=9999;
+    if(typeof va==='string') va=va.toLowerCase();
+    if(typeof vb==='string') vb=vb.toLowerCase();
+    return sortA?(va>vb?1:va<vb?-1:0):(va<vb?1:va>vb?-1:0);
+  });
+  const maxP=Math.max(...validos.map(p=>p.p),1);
+  const minP=Math.min(...validos.map(p=>p.p));
+  tb.innerHTML='';
+  lista.forEach(p=>{
+    const pct = p.p !== null && !isNaN(p.p) ? p.p : null;
+    const barW = pct !== null ? Math.round(((pct-minP)/(maxP-minP||1))*100) : 0;
+    let tag,tc,barColor;
+    if(pct===null||isNaN(pct)){tag='N/A';tc='ta-m';barColor='#aaa';}
+    else if(pct<6.5){tag='Bajo%';tc='ta-b';barColor='#2e9e52';}
+    else if(pct<7.5){tag='Medio%';tc='ta-m';barColor='#e8a030';}
+    else{tag='Alto%';tc='ta-a';barColor='#c04040';}
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-size:13px">'+p.n+'</td>'+
+      '<td style="text-align:center">'+p.h+'</td>'+
+      '<td style="text-align:center;font-weight:700">'+p.g+'</td>'+
+      '<td style="text-align:center"><span class="tag '+tc+'">'+tag+'</span>'+
+        '<span style="font-size:11px;color:var(--sec);margin-left:5px">'+(pct!==null?pct+'%':'—')+'</span></td>'+
+      '<td style="text-align:center">'+
+        '<span class="bar"><span class="baf" style="width:'+barW+'%;background:'+barColor+'"></span></span>'+
+        '<span style="font-size:11px;color:var(--sec);margin-left:5px">'+(pct!==null?pct+'%':'—')+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
+
+/* ── NAV ── */
+function showP(p,btn){
+  document.getElementById('pg').style.display=p==='g'?'block':'none';
+  document.getElementById('pp').style.display=p==='p'?'block':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  if(p==='p') renderP();
+}
+
+init();
+cargar();
+</script>
+</body>
+</html>
