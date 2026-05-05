@@ -109,12 +109,22 @@ table.rt td{padding:10px 13px;vertical-align:middle}
 footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top:1px solid var(--az-lite);background:#fff}
 @media(max-width:640px){.hdr{flex-wrap:wrap}.hdr-r{margin-left:0}.hgrid{grid-template-columns:1fr}.card{padding:15px 13px}.btn-p,.btn-ok{width:100%}}
 
+.dia-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.dia-btn{flex:1;min-width:80px;height:44px;border:2px solid var(--borde);border-radius:10px;background:#fff;color:var(--sec);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+.dia-btn:hover{border-color:var(--az3);color:var(--az2);background:var(--az-bg)}
+.dia-btn.activo{border-color:var(--az2);background:linear-gradient(135deg,var(--az) 0%,var(--az2) 100%);color:#fff;box-shadow:0 3px 10px rgba(26,58,107,.22)}
+@media(max-width:500px){.dia-btn{min-width:56px;font-size:11px;height:40px}}
 .btn-del-fila{width:26px;height:26px;padding:0;background:var(--err-bg);color:var(--err);border:1px solid var(--err-bd);border-radius:6px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .15s}
 .btn-del-fila:hover{opacity:1}
 .sel-ausente-wrap{background:linear-gradient(135deg,var(--az-bg) 0%,#f0f6ff 100%);border:1.5px solid var(--az-mid);border-radius:var(--r);padding:16px 20px;margin-bottom:16px}
 .sel-ausente-wrap .ct{margin-bottom:10px}
 .prof-select{height:40px;border:1.5px solid var(--borde);border-radius:8px;background:#fff;color:var(--txt);padding:0 11px;font-size:13.5px;flex:1;min-width:200px;cursor:pointer;font-family:inherit}
 .prof-select:focus{outline:none;border-color:var(--az3);box-shadow:0 0 0 3px rgba(58,123,213,.13)}
+.tablon-hora-bloque{background:var(--lite);border:1px solid var(--borde);border-radius:8px;padding:12px 16px;margin-bottom:10px}
+.tablon-hora-titulo{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--az2);margin-bottom:8px}
+.tablon-linea{font-size:13px;padding:4px 0;border-bottom:1px dashed var(--borde);color:var(--txt)}
+.tablon-linea:last-child{border-bottom:none}
+.td-warn{background:var(--warn-bg);color:var(--warn);font-style:italic;font-size:12px}
 </style>
 </head>
 <body>
@@ -133,6 +143,8 @@ footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top
       <div class="tabs">
         <button class="tab on" id="tab-g" onclick="showPanel('g')">&#128203; Guardias</button>
         <button class="tab" id="tab-p" onclick="showPanel('p')">&#128101; Profesores</button>
+        <button class="tab" id="tab-h" onclick="showPanel('h')">&#128197; Horario Guardias</button>
+        <button class="tab" id="tab-t" onclick="showPanel('t')">&#128248; Tablón</button>
       </div>
     </div>
   </div>
@@ -142,12 +154,16 @@ footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top
 <div id="pg">
   <div class="card">
     <div class="ct">Selección de día</div>
-    <div class="row">
-      <label style="font-size:13px;font-weight:600;color:var(--sec)">Da:</label>
-      <select id="sel-dia">
-        <option>LUNES</option><option>MARTES</option><option>MIÉRCOLES</option><option>JUEVES</option><option>VIERNES</option>
-      </select>
-      <button class="btn btn-p" style="margin-left:auto" id="btn-calc">&#9889; Calcular todo el da</button>
+    <div class="dia-selector" id="dia-selector">
+      <button class="dia-btn activo" data-dia="LUNES"    onclick="seleccionarDia(this)">Lunes</button>
+      <button class="dia-btn"        data-dia="MARTES"   onclick="seleccionarDia(this)">Martes</button>
+      <button class="dia-btn"        data-dia="MIÉRCOLES" onclick="seleccionarDia(this)">Miércoles</button>
+      <button class="dia-btn"        data-dia="JUEVES"   onclick="seleccionarDia(this)">Jueves</button>
+      <button class="dia-btn"        data-dia="VIERNES"  onclick="seleccionarDia(this)">Viernes</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+      <span id="dia-label" style="font-size:13px;color:var(--sec);font-weight:500">Día seleccionado: <strong id="dia-nombre-label" style="color:var(--az2)">Lunes</strong></span>
+      <button class="btn btn-p" id="btn-calc">&#9889; Calcular todo el día</button>
     </div>
     <div class="alerta" id="alt"></div>
   </div>
@@ -159,7 +175,17 @@ footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top
     </select>
     <button class="btn btn-p" onclick="aplicarAusenteSeleccionado()">&#10133; Aplicar ausencia</button>
   </div>
-  <p style="font-size:12px;color:var(--sec);margin-top:8px">Rellena automticamente las horas en las que tiene clase ese da.</p>
+  <p style="font-size:12px;color:var(--sec);margin-top:8px">Rellena automáticamente las horas en las que tiene clase ese día.</p>
+</div>
+<div class="sel-ausente-wrap" style="background:linear-gradient(135deg,#fff8e6 0%,#fffdf0 100%);border-color:var(--warn-bd)">
+  <div class="ct" style="color:var(--warn)">Aula de Reflexión</div>
+  <div class="row" style="gap:14px;align-items:center">
+    <span style="font-size:13px;font-weight:600;color:var(--sec)">¿Hay aula de reflexión hoy?</span>
+    <button class="btn btn-p" id="btn-reflexion-si" onclick="aplicarReflexion()" style="background:linear-gradient(135deg,var(--warn) 0%,#d97000 100%);box-shadow:0 3px 10px rgba(184,90,0,.24)">&#128681; Sí, añadir Reflexión</button>
+    <button class="btn btn-s" id="btn-reflexion-no" onclick="quitarReflexion()" style="display:none">&#10005; Quitar Reflexión</button>
+    <span id="reflexion-badge" style="display:none;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);border-radius:20px;padding:2px 12px;font-size:12px;font-weight:700">Reflexión activa en todas las horas</span>
+  </div>
+  <p style="font-size:12px;color:var(--sec);margin-top:6px">Añade "Reflexión" como ausencia en todos los tramos horarios del día.</p>
 </div>
 <div class="hgrid" id="hgrid"></div>
   <div class="rw" id="rw">
@@ -209,6 +235,102 @@ footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top
     <p style="font-size:12px;color:var(--sec);margin-top:10px">% = Guardias / Horas/semana. Menor % = entra primero. Clic en cabecera para ordenar.</p>
   </div>
 </div>
+
+<div id="ph" style="display:none">
+  <div class="card">
+    <div class="ct">Ver horario de guardias por día</div>
+    <div class="row">
+      <label style="font-size:13px;font-weight:600;color:var(--sec)">Día:</label>
+      <select id="sel-dia-h" onchange="renderHorarioGuardias()">
+        <option value="LUNES">LUNES</option>
+        <option value="MARTES">MARTES</option>
+        <option value="MIÉRCOLES">MIÉRCOLES</option>
+        <option value="JUEVES">JUEVES</option>
+        <option value="VIERNES">VIERNES</option>
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--sec);margin-top:6px">Profesores de guardia ordenados por ranking (menor % de carga entra primero).</p>
+  </div>
+  <div id="horario-guardias-grid"></div>
+</div>
+
+<!-- ══════════════ TABLÓN ══════════════ -->
+<div id="pt" style="display:none">
+
+  <!-- Bloque: Escribir en el tablón -->
+  <div class="card">
+    <div class="ct">&#128247; Escribir en el tablón desde las guardias calculadas</div>
+    <p style="font-size:13px;color:var(--sec);margin-bottom:14px;line-height:1.6">
+      Usa esta sección para volcar las asignaciones calculadas en el apartado <strong>Guardias</strong> a la presentación de Google Slides.
+      Asegúrate de haber calculado el día antes de usar estos botones.
+    </p>
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btn-tablon-reemplazar" onclick="enviarTablon(false)">
+        &#9888;&#65039; Borrar y escribir nuevas asignaciones
+      </button>
+      <button class="btn btn-s" id="btn-tablon-anadir" onclick="enviarTablon(true)">
+        &#10133; Solo añadir al tablón existente
+      </button>
+    </div>
+    <div class="banner" id="bn-tablon" style="margin-top:12px"></div>
+    <div id="tablon-preview" style="display:none;margin-top:14px">
+      <div class="stit">Vista previa de lo que se enviará al tablón</div>
+      <div id="tablon-preview-contenido"></div>
+    </div>
+  </div>
+
+  <!-- Bloque: Leer tablón y sumar guardias -->
+  <div class="card" style="margin-top:16px;background:linear-gradient(135deg,#f0fbf4 0%,#e6f4ec 100%);border-color:var(--ok-bd)">
+    <div class="ct" style="color:var(--ok)">&#128218; Leer tablón y sumar guardias al final del día</div>
+    <p style="font-size:13px;color:var(--sec);margin-bottom:14px;line-height:1.6">
+      Pulsa este botón <strong>al final del día</strong>. Se leerán las diapositivas del tablón, se identificarán los sustitutos y se mostrará un resumen para que confirmes antes de guardar en el Sheet.
+    </p>
+    <button class="btn btn-ok" id="btn-leer-tablon" onclick="leerTablon()">
+      &#128270; Leer tablón y preparar actualización
+    </button>
+    <div class="banner" id="bn-leer" style="margin-top:12px"></div>
+
+    <!-- Panel de confirmación de guardias leídas -->
+    <div id="tablon-cfp" style="display:none;margin-top:16px;background:#fff;border-radius:var(--r);border:1.5px solid var(--ok-bd);padding:18px 22px">
+      <div class="cf-t">&#10003; Confirmar guardias leídas del tablón</div>
+      <p style="font-size:12px;color:var(--sec);margin-bottom:12px;line-height:1.6">
+        Los siguientes profesores aparecen como sustitutos en el tablón. Revisa la lista y confirma para sumar +1 guardia a cada uno en el Sheet.
+        Los que no se puedan identificar aparecen en naranja — no se actualizarán.
+      </p>
+      <div style="border:1px solid var(--borde);border-radius:8px;overflow:hidden;margin-bottom:14px">
+        <table class="rt" style="font-size:13px">
+          <thead><tr>
+            <th>Sustituto (nombre del tablón)</th>
+            <th style="width:80px;text-align:center">Hora</th>
+            <th>Identificado como</th>
+            <th style="width:90px;text-align:center">Guardias actuales</th>
+          </tr></thead>
+          <tbody id="tablon-cfp-tbody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ok" onclick="confirmarLectura()">&#10003; Confirmar y guardar en Sheet</button>
+        <button class="btn btn-s" onclick="document.getElementById('tablon-cfp').style.display='none'">Cancelar</button>
+      </div>
+      <div class="banner" id="bn-cfp-lectura" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- Bloque: enlace directo a la presentación -->
+  <div class="card" style="margin-top:16px">
+    <div class="ct">&#128279; Acceso rápido al tablón</div>
+    <a href="https://docs.google.com/presentation/d/1i-gQsXxAYFPOr3oiHxh9EAsRrN3LeswLwok9JcRIzBM/present" target="_blank"
+       style="display:inline-flex;align-items:center;gap:8px;color:var(--az2);font-weight:600;font-size:13.5px;text-decoration:none;background:var(--az-bg);border:1.5px solid var(--az-mid);border-radius:8px;padding:8px 18px">
+      &#128247; Abrir presentación en modo presentación
+    </a>
+    &nbsp;
+    <a href="https://docs.google.com/presentation/d/1i-gQsXxAYFPOr3oiHxh9EAsRrN3LeswLwok9JcRIzBM/edit" target="_blank"
+       style="display:inline-flex;align-items:center;gap:8px;color:var(--sec);font-size:13px;text-decoration:none;background:var(--lite);border:1.5px solid var(--borde);border-radius:8px;padding:8px 18px">
+      ✏️ Editar presentación
+    </a>
+  </div>
+
+</div>
 </main>
 <footer>IES Sierra Blanca</footer>
 <script>
@@ -217,7 +339,7 @@ var HORARIO_PROF = {"ACJ": {"1_1": ["2E-D - LENG3"], "1_2": ["1E-C - LENG3"], "2
 var APPS_URL = 'https://script.google.com/macros/s/AKfycbyeabUD219HQXY_saEtcNufDzeS-iyFbSI2LxXsjCt0L9wZdhUPkHOrbZazFNeJhQcjzg/exec';
 
 var HORAS = ['1','2','3','4','5','6'];
-var HL = {'1':'1 hora','2':'2 hora','3':'3 hora','4':'4 hora','5':'5 hora','6':'6 hora'};
+var HL = {'1':'1ª hora','2':'2ª hora','3':'3ª hora','4':'4ª hora','5':'5ª hora','6':'6ª hora'};
 
 var HORARIO = {
   '1':{
@@ -358,6 +480,24 @@ var sortC = 'p';
 var sortA = true;
 var diaActual = 'LUNES';
 
+// ── Selector de días ─────────────────────────────────────────────────
+var _diaSeleccionado = 'LUNES';
+
+function getDiaSeleccionado() {
+  return _diaSeleccionado;
+}
+
+function seleccionarDia(btn) {
+  _diaSeleccionado = btn.getAttribute('data-dia');
+  var botones = document.querySelectorAll('.dia-btn');
+  for (var i = 0; i < botones.length; i++) {
+    botones[i].classList.remove('activo');
+  }
+  btn.classList.add('activo');
+  document.getElementById('dia-nombre-label').textContent = btn.textContent;
+  document.getElementById('alt').textContent = '';
+}
+
 function nk(s) {
   if (!s) return '';
   return String(s).toLowerCase().trim()
@@ -404,12 +544,12 @@ function cargarDesdeSheet() {
     .then(function(d) {
       if (d.ok && d.profs && d.profs.length) {
         PROFS = d.profs;
-        showBanner('Datos cargados: ' + PROFS.length + ' profesores. NUEVOS CAMBIOS: Un profesor ausente ya no puede ser asginado para cubrir una ausencia', 'ok');
+        showBanner('Datos cargados: ' + PROFS.length + ' profesores. NUEVOS CAMBIOS, EL APARTADO TABLÓN NO FUNCIONA, EN PRUEBAS!!', 'ok');
         setTimeout(function() { hideBanner(); }, 3000);
       }
     })
     .catch(function(e) {
-      showBanner('Sin conexion al Sheet. Usando datos en memoria. (' + e.message + ')', 'warn');
+      showBanner('Sin conexión al Sheet. Usando datos en memoria. (' + e.message + ')', 'warn');
     });
 }
 
@@ -420,7 +560,7 @@ function aplicarAusenteSeleccionado() {
   if (!sel || !sel.value) return;
   var abrev = sel.value;
   var nombre = ABREV_NOMBRE[abrev] || abrev;
-  var dia = document.getElementById('sel-dia').value;
+  var dia = getDiaSeleccionado();
   var diaNum = DIA_NUM[dia] || null;
   if (!diaNum) { alert('Selecciona un día primero'); return; }
 
@@ -466,7 +606,7 @@ function aplicarAusenteSeleccionado() {
 }
 
 function calcularNuevas(horasAfectadas) {
-  diaActual = document.getElementById('sel-dia').value;
+  diaActual = getDiaSeleccionado();
   var ausentesNk = getAusentesNk();
 
   for (var i = 0; i < horasAfectadas.length; i++) {
@@ -542,7 +682,7 @@ function init() {
     var btnAdd = document.createElement('button');
     btnAdd.className = 'btn btn-add btn-sm';
     btnAdd.style.marginTop = '6px';
-    btnAdd.textContent = '+ Anadir ausente';
+    btnAdd.textContent = '+ Añadir ausente';
     btnAdd.setAttribute('data-hora', h);
     btnAdd.addEventListener('click', function() {
       var hora = this.getAttribute('data-hora');
@@ -647,11 +787,17 @@ function getAusentesNk() {
       set[nk(nombre)] = true;
     }
   }
+  // También marcar como ausente el profesor seleccionado en el desplegable rápido
+  var selAus = document.getElementById('sel-ausente');
+  if (selAus && selAus.value) {
+    var nombreAbrev = ABREV_NOMBRE[selAus.value];
+    if (nombreAbrev) set[nk(nombreAbrev)] = true;
+  }
   return set;
 }
 
 function calcDia() {
-  diaActual = document.getElementById('sel-dia').value;
+  diaActual = getDiaSeleccionado();
   document.getElementById('alt').textContent = '';
   asig = {};
 
@@ -1051,9 +1197,407 @@ function renderP() {
 function showPanel(p) {
   document.getElementById('pg').style.display = p === 'g' ? 'block' : 'none';
   document.getElementById('pp').style.display = p === 'p' ? 'block' : 'none';
+  document.getElementById('ph').style.display = p === 'h' ? 'block' : 'none';
+  document.getElementById('pt').style.display = p === 't' ? 'block' : 'none';
   document.getElementById('tab-g').className = 'tab' + (p === 'g' ? ' on' : '');
   document.getElementById('tab-p').className = 'tab' + (p === 'p' ? ' on' : '');
+  document.getElementById('tab-h').className = 'tab' + (p === 'h' ? ' on' : '');
+  document.getElementById('tab-t').className = 'tab' + (p === 't' ? ' on' : '');
   if (p === 'p') renderP();
+  if (p === 'h') renderHorarioGuardias();
+  if (p === 't') renderTablonPreview();
+}
+
+// Mapa hora → índice de diapositiva (base 0)
+var HORA_A_SLIDE = {'1':3,'2':4,'3':5,'4':7,'5':8,'6':9};
+
+// ── Genera el texto de cada hora para el tablón ───────────────────────
+function buildTablonUpdates() {
+  var updates = [];
+  for (var i = 0; i < HORAS.length; i++) {
+    var h = HORAS[i];
+    var slideIdx = HORA_A_SLIDE[h];
+    if (slideIdx === undefined) continue;
+
+    var lineas = [];
+    if (asig[h] && asig[h].length) {
+      for (var j = 0; j < asig[h].length; j++) {
+        var f = asig[h][j];
+        if (f.sust) {
+          lineas.push(f.sust + ' \u2192 ' + f.ausente);
+        } else {
+          lineas.push('(Sin guardia disponible) \u2192 ' + f.ausente);
+        }
+      }
+    }
+    updates.push({ slideIndex: slideIdx, hora: h, texto: lineas.join('\n') });
+  }
+  return updates;
+}
+
+// ── Vista previa del tablón en el panel ──────────────────────────────
+function renderTablonPreview() {
+  var updates = buildTablonUpdates();
+  var contenedor = document.getElementById('tablon-preview-contenido');
+  contenedor.innerHTML = '';
+
+  var hayContenido = false;
+  for (var i = 0; i < updates.length; i++) {
+    if (updates[i].texto) { hayContenido = true; break; }
+  }
+
+  if (!hayContenido) {
+    document.getElementById('tablon-preview').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('tablon-preview').style.display = 'block';
+  for (var i = 0; i < updates.length; i++) {
+    var u = updates[i];
+    if (!u.texto) continue;
+    var bloque = document.createElement('div');
+    bloque.className = 'tablon-hora-bloque';
+    var titulo = document.createElement('div');
+    titulo.className = 'tablon-hora-titulo';
+    titulo.textContent = HL[u.hora] + ' \u2014 Diapositiva ' + (u.slideIndex + 1);
+    bloque.appendChild(titulo);
+    var lineas = u.texto.split('\n');
+    for (var j = 0; j < lineas.length; j++) {
+      var div = document.createElement('div');
+      div.className = 'tablon-linea';
+      div.textContent = lineas[j];
+      bloque.appendChild(div);
+    }
+    contenedor.appendChild(bloque);
+  }
+}
+
+// ── Enviar al tablón (reemplazar o añadir) ────────────────────────────
+function enviarTablon(soloAnadir) {
+  var updates = buildTablonUpdates();
+  var hayContenido = false;
+  for (var i = 0; i < updates.length; i++) {
+    if (updates[i].texto) { hayContenido = true; break; }
+  }
+
+  if (!hayContenido) {
+    showBanner('No hay asignaciones calculadas. Ve al apartado Guardias y calcula el día primero.', 'warn', 'bn-tablon');
+    return;
+  }
+
+  if (APPS_URL === 'TU_URL_APPS_SCRIPT_AQUI') {
+    showBanner('Configura la URL del Apps Script para poder modificar el tablón.', 'warn', 'bn-tablon');
+    return;
+  }
+
+  // Confirmación antes de borrar
+  if (!soloAnadir) {
+    var ok = confirm(
+      '⚠️ ¿Estás seguro?\n\n' +
+      'Esta acción BORRARÁ todo el contenido actual de las diapositivas de guardias ' +
+      '(diapositivas 4, 5, 6, 8, 9 y 10) y escribirá las nuevas asignaciones calculadas.\n\n' +
+      'Pulsa Aceptar para continuar o Cancelar para volver.'
+    );
+    if (!ok) return;
+  }
+
+  var accion = soloAnadir ? 'tablon_append' : 'tablon';
+  var msg = soloAnadir ? 'Añadiendo al tablón...' : 'Borrando y escribiendo nuevas asignaciones en el tablón...';
+  showBanner(msg, 'load', 'bn-tablon');
+
+  document.getElementById('btn-tablon-reemplazar').disabled = true;
+  document.getElementById('btn-tablon-anadir').disabled = true;
+
+  // Usamos POST con text/plain — Apps Script lo lee desde e.postData.contents
+  // El truco es enviar sin cabecera Content-Type explícita para evitar el preflight CORS
+  var payload = JSON.stringify({ accion: accion, updates: updates });
+
+  fetch(APPS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: payload
+    // SIN headers: así el navegador usa text/plain por defecto,
+    // que no dispara preflight y llega correctamente a doPost en Apps Script
+  }).then(function() {
+    var okMsg = soloAnadir
+      ? '✓ Asignaciones añadidas al tablón. Puede tardar unos segundos en reflejarse en la presentación.'
+      : '✓ Tablón actualizado: contenido anterior borrado y nuevas asignaciones escritas. Puede tardar unos segundos.';
+    showBanner(okMsg, 'ok', 'bn-tablon');
+  }).catch(function(e) {
+    showBanner('Error al contactar con el Apps Script: ' + e.message, 'err', 'bn-tablon');
+  }).finally(function() {
+    document.getElementById('btn-tablon-reemplazar').disabled = false;
+    document.getElementById('btn-tablon-anadir').disabled = false;
+  });
+}
+
+// ── Leer tablón y preparar confirmación ──────────────────────────────
+var lecturaPendiente = []; // guardias leídas del tablón con match en PROFS
+
+function leerTablon() {
+  if (APPS_URL === 'TU_URL_APPS_SCRIPT_AQUI') {
+    showBanner('Configura la URL del Apps Script primero.', 'warn', 'bn-leer');
+    return;
+  }
+  showBanner('Leyendo el tablón de la presentación...', 'load', 'bn-leer');
+  document.getElementById('btn-leer-tablon').disabled = true;
+  document.getElementById('tablon-cfp').style.display = 'none';
+
+  fetch(APPS_URL + '?accion=leer_tablon&t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.ok) { showBanner('Error del servidor: ' + (d.error || ''), 'err', 'bn-leer'); return; }
+      procesarLectura(d.guardias || []);
+    })
+    .catch(function(e) {
+      showBanner('Error al leer el tablón: ' + e.message, 'err', 'bn-leer');
+    })
+    .finally(function() {
+      document.getElementById('btn-leer-tablon').disabled = false;
+    });
+}
+
+function procesarLectura(guardias) {
+  if (!guardias.length) {
+    showBanner('El tablón no tiene asignaciones escritas o no se encontraron sustitutos.', 'warn', 'bn-leer');
+    return;
+  }
+
+  lecturaPendiente = [];
+  var tbody = document.getElementById('tablon-cfp-tbody');
+  tbody.innerHTML = '';
+
+  for (var i = 0; i < guardias.length; i++) {
+    var g = guardias[i];
+    var pf = matchProf(g.nombre);
+
+    lecturaPendiente.push({ g: g, pf: pf });
+
+    var tr = document.createElement('tr');
+    var tdNombre = document.createElement('td');
+    tdNombre.style.fontWeight = '600';
+    tdNombre.textContent = g.nombre;
+
+    var tdHora = document.createElement('td');
+    tdHora.style.textAlign = 'center';
+    tdHora.innerHTML = '<span class="bq">' + g.hora + '</span>';
+
+    var tdMatch = document.createElement('td');
+    var tdG = document.createElement('td');
+    tdG.style.textAlign = 'center';
+
+    if (pf) {
+      tdMatch.textContent = pf.n;
+      tdG.innerHTML = '<span class="bp">' + pf.g + ' \u2192 ' + (pf.g + 1) + '</span>';
+    } else {
+      tdMatch.className = 'td-warn';
+      tdMatch.textContent = 'No identificado — no se actualizará';
+      tdG.innerHTML = '<span style="color:var(--sec);font-size:11px">—</span>';
+    }
+
+    tr.appendChild(tdNombre);
+    tr.appendChild(tdHora);
+    tr.appendChild(tdMatch);
+    tr.appendChild(tdG);
+    tbody.appendChild(tr);
+  }
+
+  var identificados = lecturaPendiente.filter(function(x) { return x.pf && x.pf.f; }).length;
+  showBanner(
+    'Tablón leído: ' + guardias.length + ' guardia(s) encontrada(s), ' + identificados + ' profesor(es) identificado(s). Revisa y confirma.',
+    'ok', 'bn-leer'
+  );
+  document.getElementById('tablon-cfp').style.display = 'block';
+  document.getElementById('tablon-cfp').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Confirmar lectura y guardar +1 en Sheet ───────────────────────────
+function confirmarLectura() {
+  var updates = [];
+  // Agrupar: un profesor puede haber cubierto varias horas
+  var conteo = {};
+  for (var i = 0; i < lecturaPendiente.length; i++) {
+    var pf = lecturaPendiente[i].pf;
+    if (!pf || !pf.f) continue;
+    conteo[pf.f] = conteo[pf.f] || { fila: pf.f, nuevoG: pf.g, extra: 0 };
+    conteo[pf.f].extra++;
+  }
+  for (var fila in conteo) {
+    var c = conteo[fila];
+    updates.push({ fila: c.fila, nuevoG: c.nuevoG + c.extra });
+  }
+
+  if (!updates.length) {
+    showBanner('No hay profesores identificados para actualizar.', 'warn', 'bn-cfp-lectura');
+    return;
+  }
+
+  showBanner('Guardando en el Sheet...', 'load', 'bn-cfp-lectura');
+
+  fetch(APPS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ accion: 'guardias', updates: updates })
+  }).then(function() {
+    // Actualizar PROFS en memoria
+    for (var fila in conteo) {
+      var c = conteo[fila];
+      for (var j = 0; j < PROFS.length; j++) {
+        if (PROFS[j].f === c.fila) {
+          PROFS[j].g = c.nuevoG + c.extra;
+          PROFS[j].p = PROFS[j].h > 0
+            ? Math.round((PROFS[j].g / PROFS[j].h) * 10) / 10
+            : null;
+          break;
+        }
+      }
+    }
+    showBanner('Sheet actualizado correctamente para ' + updates.length + ' profesor(es). Ranking recalculado.', 'ok', 'bn-cfp-lectura');
+    document.getElementById('tablon-cfp').style.display = 'none';
+    lecturaPendiente = [];
+  }).catch(function(e) {
+    showBanner('Error al guardar: ' + e.message, 'err', 'bn-cfp-lectura');
+  });
+}
+
+function aplicarReflexion() {
+  var REFLEXION = 'Reflexión';
+  for (var i = 0; i < HORAS.length; i++) {
+    var h = HORAS[i];
+    // Comprobar si ya existe Reflexión en esta hora
+    var yaExiste = false;
+    for (var j = 0; j < ausH[h].length; j++) {
+      if (ausH[h][j].trim() === REFLEXION) { yaExiste = true; break; }
+    }
+    if (!yaExiste) {
+      // Insertar en hueco vacío o al final
+      var insertado = false;
+      for (var k = 0; k < ausH[h].length; k++) {
+        if (!ausH[h][k].trim()) { ausH[h][k] = REFLEXION; insertado = true; break; }
+      }
+      if (!insertado) ausH[h].push(REFLEXION);
+      ausH[h].push('');
+      renderAus(h);
+    }
+  }
+  document.getElementById('btn-reflexion-si').style.display = 'none';
+  document.getElementById('btn-reflexion-no').style.display = '';
+  document.getElementById('reflexion-badge').style.display = '';
+  if (document.getElementById('rw').style.display === 'block') {
+    calcularNuevas(HORAS);
+  }
+}
+
+function quitarReflexion() {
+  var REFLEXION = 'Reflexión';
+  for (var i = 0; i < HORAS.length; i++) {
+    var h = HORAS[i];
+    ausH[h] = ausH[h].filter(function(t) { return t.trim() !== REFLEXION; });
+    if (!ausH[h].length) ausH[h] = [''];
+    renderAus(h);
+  }
+  document.getElementById('btn-reflexion-si').style.display = '';
+  document.getElementById('btn-reflexion-no').style.display = 'none';
+  document.getElementById('reflexion-badge').style.display = 'none';
+  if (document.getElementById('rw').style.display === 'block') {
+    calcularNuevas(HORAS);
+  }
+}
+
+function renderHorarioGuardias() {
+  var dia = document.getElementById('sel-dia-h').value;
+  var grid = document.getElementById('horario-guardias-grid');
+  grid.innerHTML = '';
+
+  var horaLabels = {'1':'1ª hora','2':'2ª hora','3':'3ª hora','4':'4ª hora','5':'5ª hora','6':'6ª hora'};
+
+  for (var i = 0; i < HORAS.length; i++) {
+    var h = HORAS[i];
+    var listaProfs = (HORARIO[h] && HORARIO[h][dia]) ? HORARIO[h][dia].slice() : [];
+
+    // Enriquecer con datos de ranking y ordenar por % (menor primero)
+    var conDatos = listaProfs.map(function(nombre) {
+      var pf = matchProf(nombre);
+      return { nombre: nombre, pf: pf };
+    });
+
+    conDatos.sort(function(a, b) {
+      var va = getPct(a.pf), vb = getPct(b.pf);
+      if (Math.abs(va - vb) > 0.001) return va - vb;
+      return a.nombre.localeCompare(b.nombre, 'es');
+    });
+
+    // Crear bloque
+    var bloque = document.createElement('div');
+    bloque.className = 'hb';
+    bloque.style.marginBottom = '14px';
+
+    var hdr = document.createElement('div');
+    hdr.className = 'hb-hdr';
+    hdr.innerHTML = '<span class="hl">' + horaLabels[h] + '</span>' +
+      '<span class="hd">' + dia + ' &mdash; ' + listaProfs.length + ' profesor' + (listaProfs.length !== 1 ? 'es' : '') + ' de guardia</span>';
+    bloque.appendChild(hdr);
+
+    if (listaProfs.length === 0) {
+      var noData = document.createElement('div');
+      noData.style.cssText = 'padding:14px 16px;font-size:13px;color:var(--sec);font-style:italic';
+      noData.textContent = 'No hay profesores de guardia asignados para este tramo.';
+      bloque.appendChild(noData);
+    } else {
+      var table = document.createElement('table');
+      table.className = 'rt';
+      var thead = document.createElement('thead');
+      thead.innerHTML = '<tr>' +
+        '<th style="width:32px;text-align:center">#</th>' +
+        '<th>Profesor/a</th>' +
+        '<th style="width:90px;text-align:center">Guardias</th>' +
+        '<th style="width:80px;text-align:center">%</th>' +
+        '<th style="width:90px;text-align:center">Carga</th>' +
+        '</tr>';
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+
+      for (var j = 0; j < conDatos.length; j++) {
+        var item = conDatos[j];
+        var pf = item.pf;
+        var pos = j + 1;
+        var medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos + 'º';
+
+        var pct = pf && pf.p !== null && !isNaN(pf.p) ? pf.p : null;
+        var tag, tc, barColor;
+        if (pct === null) { tag = 'N/A'; tc = 'ta-m'; barColor = '#aaa'; }
+        else if (pct < 6.5) { tag = 'Bajo%'; tc = 'ta-b'; barColor = '#2e9e52'; }
+        else if (pct < 7.5) { tag = 'Medio%'; tc = 'ta-m'; barColor = '#e8a030'; }
+        else { tag = 'Alto%'; tc = 'ta-a'; barColor = '#c04040'; }
+
+        // Barra de carga (relativizada al resto de la lista)
+        var maxPct = 0;
+        for (var k = 0; k < conDatos.length; k++) {
+          if (conDatos[k].pf && conDatos[k].pf.p !== null && conDatos[k].pf.p > maxPct) maxPct = conDatos[k].pf.p;
+        }
+        var barW = (pct !== null && maxPct > 0) ? Math.round((pct / maxPct) * 100) : 0;
+
+        var tr = document.createElement('tr');
+        // Resaltar el primero (el que entraría a cubrir)
+        if (j === 0) tr.style.cssText = 'background:var(--az-bg)';
+
+        tr.innerHTML =
+          '<td style="text-align:center;font-weight:700;font-size:13px">' + medal + '</td>' +
+          '<td style="font-size:13px;font-weight:' + (j === 0 ? '700' : '400') + '">' + item.nombre + '</td>' +
+          '<td style="text-align:center;font-weight:700">' + (pf ? pf.g : '?') + '</td>' +
+          '<td style="text-align:center"><span class="tag ' + tc + '">' + (pct !== null ? pct + '%' : 'N/A') + '</span></td>' +
+          '<td style="text-align:center">' +
+            '<span class="bar"><span class="baf" style="width:' + barW + '%;background:' + barColor + '"></span></span>' +
+          '</td>';
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      bloque.appendChild(table);
+    }
+
+    grid.appendChild(bloque);
+  }
 }
 
 init();
