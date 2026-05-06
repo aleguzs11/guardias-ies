@@ -155,11 +155,11 @@ footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top
   <div class="card">
     <div class="ct">Selección de día</div>
     <div class="dia-selector" id="dia-selector">
-      <button class="dia-btn activo" data-dia="LUNES"    onclick="seleccionarDia(this)">Lunes</button>
-      <button class="dia-btn"        data-dia="MARTES"   onclick="seleccionarDia(this)">Martes</button>
-      <button class="dia-btn"        data-dia="MIÉRCOLES" onclick="seleccionarDia(this)">Miércoles</button>
-      <button class="dia-btn"        data-dia="JUEVES"   onclick="seleccionarDia(this)">Jueves</button>
-      <button class="dia-btn"        data-dia="VIERNES"  onclick="seleccionarDia(this)">Viernes</button>
+      <button class="dia-btn activo" data-dia="LUNES"     onclick="seleccionarDia(this)">Lunes</button>
+      <button class="dia-btn"        data-dia="MARTES"    onclick="seleccionarDia(this)">Martes</button>
+      <button class="dia-btn"        data-dia="MIERCOLES" onclick="seleccionarDia(this)">Miércoles</button>
+      <button class="dia-btn"        data-dia="JUEVES"    onclick="seleccionarDia(this)">Jueves</button>
+      <button class="dia-btn"        data-dia="VIERNES"   onclick="seleccionarDia(this)">Viernes</button>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
       <span id="dia-label" style="font-size:13px;color:var(--sec);font-weight:500">Día seleccionado: <strong id="dia-nombre-label" style="color:var(--az2)">Lunes</strong></span>
@@ -244,7 +244,7 @@ footer{text-align:center;padding:15px;font-size:12px;color:var(--sec);border-top
       <select id="sel-dia-h" onchange="renderHorarioGuardias()">
         <option value="LUNES">LUNES</option>
         <option value="MARTES">MARTES</option>
-        <option value="MIÉRCOLES">MIÉRCOLES</option>
+        <option value="MIERCOLES">MIÉRCOLES</option>
         <option value="JUEVES">JUEVES</option>
         <option value="VIERNES">VIERNES</option>
       </select>
@@ -484,7 +484,8 @@ var diaActual = 'LUNES';
 var _diaSeleccionado = 'LUNES';
 
 function getDiaSeleccionado() {
-  return _diaSeleccionado;
+  // Normaliza la tilde de MIÉRCOLES para coincidir siempre con las claves del HORARIO
+  return _diaSeleccionado.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 }
 
 function seleccionarDia(btn) {
@@ -544,7 +545,7 @@ function cargarDesdeSheet() {
     .then(function(d) {
       if (d.ok && d.profs && d.profs.length) {
         PROFS = d.profs;
-        showBanner('Datos cargados: ' + PROFS.length + ' profesores. NUEVOS CAMBIOS, EL APARTADO TABLÓN NO FUNCIONA, EN PRUEBAS!!', 'ok');
+        showBanner('Datos cargados: ' + PROFS.length + ' profesores. Un profesor ausente no puede ser asignado para cubrir una ausencia.', 'ok');
         setTimeout(function() { hideBanner(); }, 3000);
       }
     })
@@ -1308,27 +1309,49 @@ function enviarTablon(soloAnadir) {
   document.getElementById('btn-tablon-reemplazar').disabled = true;
   document.getElementById('btn-tablon-anadir').disabled = true;
 
-  // Usamos POST con text/plain — Apps Script lo lee desde e.postData.contents
-  // El truco es enviar sin cabecera Content-Type explícita para evitar el preflight CORS
+  // Técnica del formulario oculto: evita cualquier problema de CORS.
+  // El body llega a doPost como e.postData.contents con el valor del campo "data"
+  // y en e.parameter.data también, lo que permite doble lectura en el script.
   var payload = JSON.stringify({ accion: accion, updates: updates });
 
-  fetch(APPS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    body: payload
-    // SIN headers: así el navegador usa text/plain por defecto,
-    // que no dispara preflight y llega correctamente a doPost en Apps Script
-  }).then(function() {
+  // Crear iframe oculto para recibir la respuesta sin navegar
+  var iframeName = 'tablon-iframe-' + Date.now();
+  var iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
+  // Crear formulario oculto
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = APPS_URL;
+  form.target = iframeName;
+  form.style.display = 'none';
+
+  var input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'data';
+  input.value = payload;
+  form.appendChild(input);
+  document.body.appendChild(form);
+
+  form.submit();
+
+  // Limpiar tras enviar
+  setTimeout(function() {
+    try { document.body.removeChild(form); } catch(e) {}
+    try { document.body.removeChild(iframe); } catch(e) {}
+  }, 5000);
+
+  // Mostrar éxito tras un momento (no podemos leer la respuesta con CORS)
+  setTimeout(function() {
     var okMsg = soloAnadir
-      ? '✓ Asignaciones añadidas al tablón. Puede tardar unos segundos en reflejarse en la presentación.'
-      : '✓ Tablón actualizado: contenido anterior borrado y nuevas asignaciones escritas. Puede tardar unos segundos.';
+      ? '✓ Datos enviados al tablón. Comprueba la presentación en unos segundos.'
+      : '✓ Datos enviados. El tablón se actualizará en unos segundos.';
     showBanner(okMsg, 'ok', 'bn-tablon');
-  }).catch(function(e) {
-    showBanner('Error al contactar con el Apps Script: ' + e.message, 'err', 'bn-tablon');
-  }).finally(function() {
     document.getElementById('btn-tablon-reemplazar').disabled = false;
     document.getElementById('btn-tablon-anadir').disabled = false;
-  });
+  }, 2500);
 }
 
 // ── Leer tablón y preparar confirmación ──────────────────────────────
