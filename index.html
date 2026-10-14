@@ -412,8 +412,7 @@ var HORARIO = {
       "Rodríguez Briales, Paula",
       "Gadreau ., Benjamín Michel Rene",
       "Martín González, Esperanza",
-      "Ortiz Pastor, Ana",
-      "Botello Vazquez, Raúl"
+      "Ortiz Pastor, Ana"
     ],
     "JUEVES": [
       "Platero Márquez, Manuel Ignacio",
@@ -461,8 +460,7 @@ var HORARIO = {
       "Sabater Espolet, Rosalía",
       "Cano Furniet, Mº Dolores",
       "Poblete Girones, Estívaliz",
-      "Moreno Gambero, Raúl",
-      "Botello Vázquez, Raúl"
+      "Moreno Gambero, Raúl"
     ],
     "JUEVES": [
       "Gámez Sánchez, Jose Luis",
@@ -829,8 +827,12 @@ function aplicarAusenteSeleccionado() {
   for (var h = 1; h <= 6; h++) {
     var hStr = String(h);
     var key = diaNum + '_' + hStr;
-    if (clases[key]) {
-      horasConClase.push({ hora: hStr, texto: clases[key] });
+    // Ignorar las horas de guardia: no hay que sustituir a un profe de guardia
+    var soloClases = (clases[key] || []).filter(function(t) {
+      return t.trim().toUpperCase().indexOf('GUA') !== 0;
+    });
+    if (soloClases.length) {
+      horasConClase.push({ hora: hStr, texto: soloClases.join(', ') });
     }
   }
 
@@ -863,6 +865,19 @@ function aplicarAusenteSeleccionado() {
   if (document.getElementById('rw').style.display === 'block') {
     calcularNuevas(horasConClase.map(function(x) { return x.hora; }));
   }
+}
+
+// Preselecciona el día actual (fin de semana -> lunes)
+function seleccionarDiaActual() {
+  var nombres = ['LUNES','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','LUNES'];
+  // getDay(): 0 = domingo, 1 = lunes ... 6 = sábado
+  var dia = nombres[new Date().getDay()];
+  var btn = document.querySelector('.dia-btn[data-dia="' + dia + '"]');
+  if (btn) seleccionarDia(btn);
+
+  // Opcional: también en la pestaña "Horario Guardias"
+  var selH = document.getElementById('sel-dia-h');
+  if (selH) selH.value = dia;
 }
 
 function calcularNuevas(horasAfectadas) {
@@ -1874,6 +1889,7 @@ function renderHorarioGuardias() {
 }
 
 init();
+seleccionarDiaActual();
 cargarDesdeSheet();
 </script>
 </body>
